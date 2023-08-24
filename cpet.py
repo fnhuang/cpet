@@ -16,6 +16,35 @@ import re
 # directory = "./"
 # subproject = "CPET"
 validate_sheets = ["Data", "Results"]
+participant_info_2_include = ["Row","ID1","LastName","FirstName","Age","Heightcm","Weightkg","TestTime","TestDuration","ExerciseDuration", 
+                              "SpirometryFVCPre","SpirometryFVCPred","SpirometryFVCpPred","SpirometryFEV1Pre",
+                              "SpirometryFEV1Pred","SpirometryFEV1pPred","SpirometryMVVPre",
+                              "ProtocoltAT","ProtocoltRC","ProtocoltMax","ProtocolPowerWarmUp","ProtocolPowerAT",
+                              "ProtocolPowerRC","ProtocolPowerMax","ProtocolRevolutionWarmUp","ProtocolRevolutionAT",
+                              "ProtocolRevolutionRC","ProtocolRevolutionMax",
+                              "MetabolicVO2Rest","MetabolicVO2WarmUp","MetabolicVO2AT","MetabolicVO2RC","MetabolicVO2Max","MetabolicVO2Pred",
+                              "MetabolicVO2pPred","MetabolicVO2_KgRest","MetabolicVO2_KgWarmUp","MetabolicVO2_KgAT","MetabolicVO2_KgRC",
+                              "MetabolicVO2_KgMax","MetabolicVO2_KgPred","MetabolicVO2_KgpPred","MetabolicMETSRest","MetabolicMETSWarmUp",
+                              "MetabolicMETSAT","MetabolicMETSRC","MetabolicMETSMax","MetabolicMETSPred","MetabolicMETSpPred","MetabolicRQRest",
+                              "MetabolicRQWarmUp","MetabolicRQAT","MetabolicRQRC","MetabolicRQMax",
+                              "VentilatoryVE_VCO2slopeMeas","VentilatoryVE_VCO2slopePred","VentilatoryVE_VCO2slopepPred",
+                              "VentilatoryVE_VCO2intercMeas","VentilatoryOUESMeas","VentilatoryVERest","VentilatoryVEWarmUp",
+                              "VentilatoryVEAT","VentilatoryVERC","VentilatoryVEMax","VentilatoryBRAT","VentilatoryBRRC",
+                              "VentilatoryBRMax","VentilatoryVTRest","VentilatoryVTWarmUp","VentilatoryVTAT","VentilatoryVTRC",
+                              "VentilatoryVTMax","VentilatoryRfRest","VentilatoryRfWarmUp","VentilatoryRfAT","VentilatoryRfRC",
+                              "VentilatoryRfMax","CardiovascularHRRest","CardiovascularHRWarmUp","CardiovascularHRAT",
+                              "CardiovascularHRRC","CardiovascularHRMax","CardiovascularHRPred","CardiovascularHRpPred",
+                              "CardiovascularHRRMeas","CardiovascularHRR_1_minuteMeas","CardiovascularVO2_WRSlopeMeas",
+                              "CardiovascularVO2_WRSlopePred","CardiovascularVO2_WRSlopepPred","CardiovascularVO2_HRRest",
+                              "CardiovascularVO2_HRWarmUp","CardiovascularVO2_HRAT","CardiovascularVO2_HRRC","CardiovascularVO2_HRMax",
+                              "CardiovascularVO2_HRPred","CardiovascularVO2_HRpPred","CardiovascularPSystRest","CardiovascularPSystWarmUp",
+                              "CardiovascularPDiastRest","CardiovascularPDiastWarmUp","GasExchangeVO2_ATMeas","GasExchangePetCO2Rest",
+                              "GasExchangePetCO2WarmUp","GasExchangePetCO2AT","GasExchangePetCO2RC","GasExchangePetCO2Max",
+                              "GasExchangePetO2Rest","GasExchangePetO2WarmUp","GasExchangePetO2AT","GasExchangePetO2RC","GasExchangePetO2Max",
+                              "GasExchangeVE_VO2AT","GasExchangeVE_VO2RC","GasExchangeVE_VO2Max","GasExchangeVE_VCO2AT","GasExchangeVE_VCO2RC",
+                              "GasExchangeVE_VCO2Max","GasExchangeVE_VCO2Pred","GasExchangeVE_VCO2pPred","GasExchangeSpO2Rest","GasExchangeSpO2WarmUp",
+                              "GasExchangeSpO2AT","GasExchangeSpO2RC","GasExchangeSpO2Max"]
+
 # os.chdir('D:/Cloud/Onedrive/Work/UCL/Projects/LHA/Code')
 
 
@@ -91,7 +120,7 @@ def find_rows_with_strings_at_location_0(dataframe):
   Returns:
     A list of the indexes where the value at location 0 is a string and the rest of the row is NaN.
   """
-
+  #print(dataframe)
   rows = []
   for i in range(len(dataframe)):
     row = dataframe.iloc[i]
@@ -114,12 +143,12 @@ def split_dataframe_by_rows(dataframe, rows):
   split_dataframes = []
   split_dataheaders = []
   
-  for i in range(len(rows)-1):
+  for i in range(len(rows)):
     split_dataheaders.append(dataframe.iloc[rows[i]][0])
     if i < len(rows) - 1:
       current_dataframe = dataframe.iloc[rows[i]+2:rows[i+1]-1]
     else:
-      current_dataframe = dataframe.iloc[rows[i]:]
+      current_dataframe = dataframe.iloc[rows[i]+2:]
     
     current_dataframe.columns = list(dataframe.iloc[rows[i] + 1])
     current_dataframe = current_dataframe.reset_index(drop=True)
@@ -158,7 +187,7 @@ def main():
   print(f"file with valid sheets and under subproject {subproject} folder", final_list)
 
   
-  merged_data_df = pd.DataFrame()
+  merged_data_df = pd.DataFrame(columns=participant_info_2_include)
 
   
 
@@ -169,6 +198,7 @@ def main():
     # finding the patient id by traversing from leaf to the parent nodes
     grandpa_directory = os.path.dirname(os.path.dirname(file))
     patient_id = os.path.basename(grandpa_directory)
+    participant_data["Row"] = patient_id
 
     # get the datasheet
     for label_value_pair in ["A:B","D:E","G:H"]:
@@ -177,20 +207,34 @@ def main():
       data = data.dropna()
       for index, row in data.iterrows():
         value = row["value"]
-        if value == "-" or value == "None":
-          value = ""
-        participant_data[row["label"]] = value
+        
+        if isinstance(value, str):
+          if value == "-" or value == "None" or value.lower() == "convalescence" or value.lower == "covalescence":
+            value = ""
+        
+        label = re.sub(r'\s', '', row["label"])
+        label = label.replace("(","")
+        label = label.replace(")","")
+        
+        if label in participant_info_2_include:
+          participant_data[label] = value
+        
 
     # get the results sheet
-    dataframe = pd.read_excel(file, sheet_name="Results")
+    dataframe = pd.read_excel(file, sheet_name="Results", header=None)
 
     # find rows with a string at location 0, and the rest of the columns is NaN      
     indexes = find_rows_with_strings_at_location_0(dataframe)
+    #print(indexes)
 
     split_dataheaders, split_dataframes = split_dataframe_by_rows(dataframe, indexes)
     
+    
+    #print(patient_id, len(split_dataframes))
+    
     for i in range(len(split_dataframes)):
       subset_data = split_dataframes[i]
+      
       for index, row in subset_data.iterrows():
         parameter_name = row["Parameter"]
         uom = row["um"]
@@ -198,21 +242,24 @@ def main():
             if column not in ["Parameter", "um"]:
                 if '%' in column:
                     key_name = split_dataheaders[i] + parameter_name + column
+                    key_name = key_name.replace("%","p")
                 else:
-                    key_name = split_dataheaders[i] + parameter_name + column + f"({uom})"
+                    key_name = split_dataheaders[i] + parameter_name + column
+                key_name = key_name.replace("/","_")
+                key_name = key_name.replace(".","")
 
                 # remove all white space
                 key_name = re.sub(r'\s', '', key_name)
 
-                # '-' is considered none
-                if value == "-":
-                    value = None
+                # in this code we extract only numeric data
+                if isinstance(value, str):
+                  value = None
                 
-                if key_name != None:
+                if key_name != None and key_name in participant_info_2_include:
                     participant_data[key_name] = value
-    #print(participant_data)
+                    
     merged_data_df = merged_data_df.append(participant_data, ignore_index=True)
-  
+
   merged_data_df.to_csv(output, index=False)
 
   
