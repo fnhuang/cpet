@@ -246,6 +246,7 @@ def main():
                 else:
                     key_name = split_dataheaders[i] + parameter_name + column
                 key_name = key_name.replace("/","_")
+                key_name = key_name.replace("@","_")
                 key_name = key_name.replace(".","")
 
                 # remove all white space
